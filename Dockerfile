@@ -3,7 +3,7 @@ FROM alpine:3.11
 
 COPY . /home/web/
 
-RUN apk add python3
+RUN apk add --no-cache --update python3
 RUN adduser --disabled-password web && mkdir -p /home/web/log/ && chown -R web.web /home/web/
 
 USER web

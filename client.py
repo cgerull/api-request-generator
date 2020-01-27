@@ -1,35 +1,47 @@
+"""HTTP client request generator"""
 import http.client
 import socket
 import os
 import sys
 import logging
 import time
+from config import config
 
-def init_logger(logfile):
-    logger = logging.getLogger('request-generator')
-    logger.setLevel(logging.INFO)
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+def init_logger():
+    """Initial logger to console and if configured to a logfile."""
+    logger = logging.getLogger(config["logger_name"])
+    logger.setLevel(config["log_level"])
+    formatter = logging.Formatter(config["log_format"])
 
-    if logfile:
-        # create file handler which logs even debug messages
-        fh = logging.FileHandler(logfile)
-        fh.setLevel(logging.DEBUG)
-        fh.setFormatter(formatter)
-        logger.addHandler(fh)
-    # create console handler with a higher log level
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.INFO)
-    ch.setFormatter(formatter)
-    logger.addHandler(ch)
+    if config["logfile"]:
+        logger.addHandler(make_filehandler(config["logfile"], formatter))
+    # always log to console
+    logger.addHandler(make_consolehandler(formatter))
 
     return logger
     
 
-def send(server = 'localhost', srv_path = '/', port=8080):
+def  make_filehandler(logfile, formatter, level=logging.DEBUG):
+    """Return a logging filehandler"""
+    fh = logging.FileHandler(logfile)
+    fh.setLevel(level)
+    fh.setFormatter(formatter)
+    return fh
+
+
+def make_consolehandler(formatter, level=logging.INFO):
+    """Return a console logging handler."""
+    ch = logging.StreamHandler()
+    ch.setLevel(level)
+    ch.setFormatter(formatter)
+    return ch
+
+
+def send(server = 'localhost', port = 8080, srv_path = '/'):
     """Send requests endlessly"""
     logger.info("Connecting to http://{}:{}{}".format(server, port, srv_path))
     headers = {
-        'User-Agent': 'Call-gen 0.2'
+        'User-Agent': 'Request-generator 0.2'
     }
     connected = False
     conn = http.client.HTTPConnection(server, port)
@@ -73,15 +85,9 @@ def send(server = 'localhost', srv_path = '/', port=8080):
 
 
 if __name__ == "__main__":
-    server = os.environ.get('SERVER') or 'localhost'
-    srv_path = os.environ.get('SRV_PATH') or '/'
-    port= os.environ.get('PORT') or 8080
-    logfile = os.environ.get('LOGFILE') or ''
-    logger = init_logger(logfile)
-    logger.info("Start call-generator for {} on path {}".format(server, srv_path))
-
+    logger = init_logger()
     try:
-        send(server, srv_path)
+        send(config["server"], config["port"], config["srv_path"])
     except KeyboardInterrupt:
         logger.info("Stopped by keyboard interrupt")
         pass
