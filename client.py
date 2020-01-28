@@ -36,7 +36,28 @@ def make_consolehandler(formatter, level=logging.INFO):
     ch.setFormatter(formatter)
     return ch
 
-
+def get_connection(server=config['server'],
+                    port=config['port'],
+                    srv_path=config['srv_path'],
+                    logger=None):
+    conn = http.client.HTTPConnection(server, port)
+    connected = False
+    while (not connected):
+        try:
+            if logger:
+                logger.info("Address info for {} {}".format(server, socket.getaddrinfo(server, port)))
+            else:
+                print("Address info for {} {}".format(server, socket.getaddrinfo(server, port)))
+            conn.request("GET", srv_path)
+            connected = True
+        except socket.gaierror as e:
+            if logger:
+                logger.error("Initial connection caught {}; retrying.".format(e))
+            else:
+                print("Initial connection caught {}; retrying.".format(e))
+            time.sleep(5)
+    return conn
+                
 def send(server = 'localhost', port = 8080, srv_path = '/'):
     """Send requests endlessly"""
     logger.info("Connecting to http://{}:{}{}".format(server, port, srv_path))
