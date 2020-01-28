@@ -1,7 +1,7 @@
 import pytest
 import client
 import config
-
+from urllib.parse import urlparse
 
 @pytest.fixture
 def mock_env_server(monkeypatch):
@@ -30,6 +30,8 @@ def test_init_logger():
 def test_send_api_request(httpserver):
     # set up the server to serve /api/echo with the json
     httpserver.expect_request("/").respond_with_json({"foo": "bar"})
+    url = urlparse(httpserver.url_for("/"))
+    print("url: {}, hostname: {}, port: {}, path: {}".format(url, url.hostname, url.port, url.path))
     # check that the request is served
-    assert client.get_connection()
+    assert client.get_connection(server=url.hostname, port=url.port, srv_path=url.path)
     # assert requests.get(httpserver.url_for("/foobar")).json() == {'foo': 'bar'}
